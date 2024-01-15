@@ -1,7 +1,10 @@
+import math
 import os
 import random
 import time
 
+import numpy
+import numpy as np
 import torch
 
 # print(torch.cuda.is_available())  # 判断CUDA是否可用
@@ -58,3 +61,10 @@ import torch
 #     a = b[i] + b[i + 1] + b[i + 2] + b[i + 3]
 #
 # print(time.time() - t)
+
+a = np.array([1,2,3,4,5])
+a = np.pad(a, (0, 4))
+b = numpy.resize(a, (3,3))
+
+print(b)
+
