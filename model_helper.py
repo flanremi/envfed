@@ -1,10 +1,16 @@
 import os
 import random
 
+import cv2
 import torch
+import numpy as np
 
+import autoencoder
+import train_class
 from train_class import getParamlistByModel
 from autoencoder import AutoCoderDnn
+
+from PIL import Image
 
 def get_all_filenames(folder_path):
     filenames = []
@@ -13,6 +19,10 @@ def get_all_filenames(folder_path):
             filenames.append(os.path.join(root, file))
     return filenames
 
+def resize(image, x, y):
+    image = Image.fromarray(image)
+    out_image = image.resize((int(x), int(y)))
+    return  np.array(out_image)
 
 class ModelHelper:
 
@@ -35,8 +45,9 @@ class ModelHelper:
             self.val_pool.append(tmp)
         self.train_pool.extend(tmps)
         self.device = torch.device("cuda:0")
-        self.net = AutoCoderDnn(self.device)
-        torch.save(self.net, "tmp.pt")
+        self.net = autoencoder.AutoCoder1(self.device)
+        self.optimizer = optim.SGD(self.net.parameters(), lr=0.001, momentum=0.9)
+        self.lossFunc = torch.nn.MSELoss()
 
     def init_pool(self):
         for dir_name in self.dir_names:
@@ -68,12 +79,37 @@ class ModelHelper:
     def getSquad(self, length):
         tmp = self.pool.copy()
         random.shuffle(tmp)
-        _t = tmp[: length]
-
-        return
+        _ts = tmp[: length]
+        result = []
+        for _t in _ts:
+            item = train_class.getParamlistByModel(_t)
+            item = np.resize(item, (1, 7031250))
+            result.append(item)
+        return result
 
 
     def train(self):
         pass
 
-ModelHelper()
+from torch import optim
+
+if __name__ == '__main__':
+    helper = ModelHelper()
+    result = []
+    # 周期
+    for i in range(1000):
+        a = np.array(helper.getSquad(2048))
+        loss = 0
+        for j in range(int(2048 / 16)):
+            b = torch.from_numpy(a[j * 16: (j + 1) * 16]).to(helper.device, torch.float)
+            target = torch.from_numpy(a[j * 16: (j + 1) * 16]).to(helper.device, torch.float)
+            out = helper.net.forward(b)
+            _loss = helper.lossFunc(out, target)
+            loss += _loss.to(torch.device("cpu")).detach().numpy().reshape(-1)
+            helper.optimizer.zero_grad()
+            _loss.backward()
+            helper.optimizer.step()
+        loss /= 2048
+        result.append(loss)
+        print(loss)
+    torch.save(helper.net.state_dict(), "auto_encoder\\model1.pt")
