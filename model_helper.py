@@ -1,5 +1,7 @@
+import json
 import os
 import random
+import time
 
 import cv2
 import torch
@@ -9,6 +11,9 @@ import autoencoder
 import train_class
 from train_class import getParamlistByModel
 from autoencoder import AutoCoderDnn
+import torch.nn as nn
+import torch.nn.functional as F
+
 
 from PIL import Image
 
@@ -45,8 +50,8 @@ class ModelHelper:
             self.val_pool.append(tmp)
         self.train_pool.extend(tmps)
         self.device = torch.device("cuda:0")
-        self.net = autoencoder.AutoCoder1(self.device)
-        self.optimizer = optim.SGD(self.net.parameters(), lr=0.001, momentum=0.9)
+        self.net = nn.DataParallel(autoencoder.AutoCoder1(self.device)).to(self.device)
+        self.optimizer = optim.Adam(self.net.parameters(), lr=0.001)
         self.lossFunc = torch.nn.MSELoss()
 
     def init_pool(self):
@@ -95,21 +100,30 @@ from torch import optim
 
 if __name__ == '__main__':
     helper = ModelHelper()
+    t = time.time()
+    a = helper.getSquad(800)
+    print(time.time() - t)
     result = []
     # 周期
-    for i in range(1000):
-        a = np.array(helper.getSquad(2048))
-        loss = 0
-        for j in range(int(2048 / 16)):
-            b = torch.from_numpy(a[j * 16: (j + 1) * 16]).to(helper.device, torch.float)
-            target = torch.from_numpy(a[j * 16: (j + 1) * 16]).to(helper.device, torch.float)
-            out = helper.net.forward(b)
-            _loss = helper.lossFunc(out, target)
-            loss += _loss.to(torch.device("cpu")).detach().numpy().reshape(-1)
+    for i in range(100):
+
+        random.shuffle(a)
+
+        # target = torch.from_numpy(np.array(a[j * 16: (j + 1) * 16])).to(helper.device, torch.float)
+        for j in range(int(800 / 8)):
+            loss = 0
             helper.optimizer.zero_grad()
+            b = torch.from_numpy(np.array(a[j * 8: (j + 1) * 8])).to(helper.device, torch.float)
+            out = helper.net.forward(b)
+            _loss = torch.mean(F.mse_loss(out, b))
             _loss.backward()
             helper.optimizer.step()
-        loss /= 2048
-        result.append(loss)
-        print(loss)
-    torch.save(helper.net.state_dict(), "auto_encoder\\model1.pt")
+            loss += _loss.to(torch.device("cpu")).detach().numpy().reshape(-1).tolist()[0]
+            loss /= 8
+            result.append(loss)
+            print(loss)
+            torch.cuda.empty_cache()
+            if j % 10 == 0:
+                torch.save(helper.net.state_dict(), "auto_encoder\\model1.pt")
+                with open("auto_encoder\\loss.txt", "w+") as f:
+                    f.write(json.dumps(result))
