@@ -69,23 +69,23 @@ import torch
 # print(b)
 
 
-def get_all_filenames(folder_path):
-    filenames = []
-    for root, dirs, files in os.walk(folder_path):
-        for file in files:
-            filenames.append(os.path.join(root, file))
-    return filenames
-
-
-dir_names = ["results"]
-env_names = ["crossing", "high_way", "main_road", "total"]
-model_dir = "C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\{}\\{}\\{}\\train\\weights\\"
-for dir_name in dir_names:
-    for env_name in env_names:
-        for i in range(25):
-            url = model_dir.format(dir_name, env_name, "client" + str(i))
-            file_names = get_all_filenames(url)
-            for file_name in file_names:
-                if file_name.find("epoch") != -1:
-                    if random.randint(0,1) == 1:
-                        os.remove(file_name)
+# def get_all_filenames(folder_path):
+#     filenames = []
+#     for root, dirs, files in os.walk(folder_path):
+#         for file in files:
+#             filenames.append(os.path.join(root, file))
+#     return filenames
+#
+#
+# dir_names = ["results"]
+# env_names = ["crossing", "high_way", "main_road", "total"]
+# model_dir = "C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\{}\\{}\\{}\\train\\weights\\"
+# for dir_name in dir_names:
+#     for env_name in env_names:
+#         for i in range(25):
+#             url = model_dir.format(dir_name, env_name, "client" + str(i))
+#             file_names = get_all_filenames(url)
+#             for file_name in file_names:
+#                 if file_name.find("epoch") != -1:
+#                     if random.randint(0,1) == 1:
+#                         os.remove(file_name)

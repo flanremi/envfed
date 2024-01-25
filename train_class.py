@@ -1124,6 +1124,14 @@ def getParamlistByModel(model_url):
     tmp = torch.cat(tmp)
     return tmp.detach().cpu().numpy()
 
+def expandModel(model):
+    model = model.state_dict().items()
+    tmp = []
+    for key, value in model:
+        tmp.append(value.view(-1))
+    tmp = torch.cat(tmp)
+    return tmp.detach().cpu().numpy()
+
 
 if __name__ == '__main__':
     opt = Opt(

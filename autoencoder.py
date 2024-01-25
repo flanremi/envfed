@@ -107,7 +107,7 @@ class AutoCoder1(nn.Module):
         self.pool24 = nn.MaxUnpool1d(stride=25, kernel_size=25).to(device)
         self.bn24 = nn.BatchNorm1d(1).to(device)
 
-    def forward(self, x):
+    def forward2(self, x):
 
         x, indices1 = self.pool11(fun.relu(self.bn11(self.conv11(x))))
         x, indices2 = self.pool12(fun.relu(self.bn12(self.conv12(x))))
@@ -149,6 +149,17 @@ class AutoCoder1(nn.Module):
         # x = fun.relu(self.bn21(self.conv21(self.pool21(x, indices3))))
         # x = fun.relu(self.bn22(self.conv22(self.pool22(x, indices2))))
         # x = fun.relu(self.bn23(self.conv23(self.pool23(x, indices1))))
+
+        return x
+
+    def forward(self, x):
+        x, indices1 = self.pool11(fun.relu(self.bn11(self.conv11(x))))
+        x, indices2 = self.pool12(fun.relu(self.bn12(self.conv12(x))))
+        x, indices3 = self.pool13(fun.relu(self.bn13(self.conv13(x))))
+        x, indices4 = self.pool14(fun.relu(self.bn14(self.conv14(x))))
+        x = x.view(-1, 1, 128 * 18)
+        x = fun.relu(self.dnn11(x))
+        x = fun.relu(self.dnn12(x))
 
         return x
 
@@ -347,9 +358,7 @@ class Decoder(nn.Module):
         return x
 
 
-class AutoCoderHelper:
-
-    def __init__(self):
-        super().__init__()
-        self.device = torch.device("cuda:0")
-        self.net = AutoCoder1(self.device)
+# class AutoCoderHelper:
+#
+#     def __init__(self):
+#         super().__init__()

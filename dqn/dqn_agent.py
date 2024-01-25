@@ -29,10 +29,11 @@ class Qnet(torch.nn.Module):
 class DDQN:
     ''' DQN算法 '''
 
-    def __init__(self, device, input_dim, action_dim, sigma = 0.01, actor_lr = 3e-4, learning_rate = 0.001,
+    def __init__(self, device, input_dim, action_dim, name, sigma = 0.01, actor_lr = 3e-4, learning_rate = 0.001,
                  gamma = 0.95, tau = 0.005, epsilon = 0.05, target_update = 10):
         self.action_dim = action_dim
         self.input_dim = input_dim
+        self.name = name
         self.q_net = Qnet(self.input_dim, self.action_dim).to(device)  # Q网络
         # 目标网络
         self.target_q_net = Qnet(self.input_dim, self.action_dim).to(device)
@@ -55,13 +56,13 @@ class DDQN:
 
     def save_net(self):
         global current_path
-        torch.save(self.q_net.state_dict(), current_path + "net/" + "dqn_q_net")
-        torch.save(self.target_q_net.state_dict(), current_path + "net/" + "dqn_target_q_net")
+        torch.save(self.q_net.state_dict(), current_path + "net/" + self.name +  "_dqn_q_net")
+        torch.save(self.target_q_net.state_dict(), current_path + "net/"+ self.name +  "_dqn_target_q_net")
 
     def load_net(self):
         global current_path
-        self.q_net.load_state_dict(torch.load(current_path + "net/" + "dqn_q_net"))
-        self.target_q_net.load_state_dict(torch.load(current_path + "net/" + "dqn_target_q_net"))
+        self.q_net.load_state_dict(torch.load(current_path + "net/" + self.name+ "_dqn_q_net"))
+        self.target_q_net.load_state_dict(torch.load(current_path + "net/"+ self.name + "_dqn_target_q_net"))
 
     # Q是向后传递的，期望是向前迭代的
     def update(self, transition_dict):

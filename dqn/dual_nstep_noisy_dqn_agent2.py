@@ -94,14 +94,14 @@ class Qnet(torch.nn.Module):
         self.fc1 = torch.nn.Linear(input_dim, hidden).to(device)
         self.ln1 = torch.nn.LayerNorm(hidden).to(device)
 
-        self.fc2 = torch.nn.Linear(hidden, hidden / 4).to(device)
-        self.ln2 = torch.nn.LayerNorm(hidden / 4).to(device)
+        self.fc2 = torch.nn.Linear(hidden, int(hidden / 4)).to(device)
+        self.ln2 = torch.nn.LayerNorm(int(hidden / 4)).to(device)
 
-        self.advantage_hidden_layer = NoisyLinear(hidden / 4, hidden / 4).to(device)
-        self.advantage_layer = NoisyLinear(hidden / 4, action_dim).to(device)
+        self.advantage_hidden_layer = NoisyLinear(int(hidden / 4), int(hidden / 4)).to(device)
+        self.advantage_layer = NoisyLinear(int(hidden / 4), action_dim).to(device)
 
-        self.value_hidden_layer = NoisyLinear(hidden / 4, hidden / 4).to(device)
-        self.value_layer = NoisyLinear(hidden / 4, 1).to(device)
+        self.value_hidden_layer = NoisyLinear(int(hidden / 4), int(hidden / 4)).to(device)
+        self.value_layer = NoisyLinear(int(hidden / 4), 1).to(device)
         # self.fc6 = torch.nn.Linear(hidden, action_space).to(device)
 
     def forward(self, x):
@@ -138,7 +138,7 @@ class DDQN:
         self.input_dim = input_dim
         self.q_net = Qnet(device, self.input_dim, self.action_dim) # Q网络
         # 目标网络
-        self.target_q_net = Qnet(device)
+        self.target_q_net = Qnet(device, self.input_dim, self.action_dim)
         # 使用Adam优化器
         self.optimizer = torch.optim.Adam(self.q_net.parameters(),
                                           lr=learning_rate)
@@ -178,15 +178,21 @@ class DDQN:
         return action
 
     # Q是向后传递的，期望是向前迭代的
-    def update(self, sample, n_sample):
+    def update(self, n_sample):
 
-        def get_loss(transition_dict, step):
-            states, actions, rewards, next_states, dones = transition_dict
-            states = states[0]
-            actions = actions[0].to(dtype=torch.int64)
-            rewards = rewards[0]
-            next_states = next_states[0]
-            dones = dones[0]
+        def get_loss(transition_dict):
+            states = torch.tensor(transition_dict[0],
+                                  dtype=torch.float).to(self.device)
+            actions = torch.tensor(transition_dict[1]).view(-1, 1).to(
+                self.device)
+            rewards = torch.tensor(transition_dict[2],
+                                   dtype=torch.float).view(-1, 1).to(self.device)
+            next_states = torch.tensor(transition_dict[3],
+                                       dtype=torch.float).to(self.device)
+            dones = torch.tensor(transition_dict[4],
+                                 dtype=torch.float).view(-1, 1).to(self.device)
+            steps = torch.tensor(transition_dict[5],
+                                  dtype=torch.float).view(-1, 1).to(self.device)
 
             q_values = self.q_net(states).gather(1, actions)  # Q值
             # 下个状态的最大Q值
@@ -196,14 +202,14 @@ class DDQN:
             actiont = self.q_net(next_states)
             action2 = actiont.argmax(dim=1).unsqueeze(dim=1)
             max_next_q_values = self.target_q_net(next_states).gather(1, action2)
-            q_targets = rewards + (self.gamma ** step) * max_next_q_values * (1 - dones
+            q_targets = rewards + (self.gamma ** steps) * max_next_q_values * (1 - dones
                                                                     )  # TD误差目标
             _dqn_loss = torch.mean(F.mse_loss(q_values, q_targets))  # 均方误差损失函数
             return _dqn_loss
         # print("dqn_loss: " + str(dqn_loss.detach().cpu().item()))
 
         # print(dqn_loss)
-        dqn_loss = get_loss(sample, 1) + get_loss(n_sample, 2)
+        dqn_loss = get_loss(n_sample)
         self.optimizer.zero_grad()  # PyTorch中默认梯度会累积,这里需要显式将梯度置为0
         dqn_loss.backward()  # 反向传播更新参数
         self.optimizer.step()
