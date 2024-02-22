@@ -17,13 +17,19 @@ class Qnet(torch.nn.Module):
         super(Qnet, self).__init__()
         hidden = 2 ** (int(math.log2(input_dim)))
         self.fc1 = torch.nn.Linear(input_dim, hidden)
+        self.ln1 = torch.nn.LayerNorm(hidden)
         self.fc2 = torch.nn.Linear(hidden, int(hidden / 4))
-        self.fc3 = torch.nn.Linear(int(hidden / 4), action_dim)
+        self.ln2 = torch.nn.LayerNorm(int(hidden / 4))
+        self.fc3 = torch.nn.Linear(int(hidden / 4), int(hidden / 4))
+        self.ln3 = torch.nn.LayerNorm(int(hidden / 4))
+
+        self.fc4 = torch.nn.Linear(int(hidden / 4), action_dim)
 
     def forward(self, x):
-        x = F.relu(self.fc1(x))  # 隐藏层使用ReLU激活函数
-        x = F.relu(self.fc2(x))  # 隐藏层使用ReLU激活函数
-        return self.fc3(x)
+        x = self.ln1(F.relu(self.fc1(x)))  # 隐藏层使用ReLU激活函数
+        x = self.ln2(F.relu(self.fc2(x)))  # 隐藏层使用ReLU激活函数
+        x = self.ln3(F.relu(self.fc3(x)))
+        return self.fc4(x)
 
 
 class DDQN:
@@ -47,7 +53,7 @@ class DDQN:
         self.device = device
 
     def take_action(self, state):  # epsilon-贪婪策略采取动作
-        if np.random.random() < self.epsilon:
+        if np.random.random() < self.laos:
             action = np.random.randint(self.action_dim)
         else:
             state = torch.tensor([state], dtype=torch.float).to(self.device)

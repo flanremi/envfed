@@ -34,10 +34,11 @@ class Environment:
         self.sigma = 40
         # with open(self.meta_url, "r") as file:
         #     self.metadata = json.loads(file.read()).get(_type)
-        with open("C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\auto_encoder\\codes", "r") as file:
+        with open("C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\auto_encoder\\codes2", "r") as file:
             self.codes = json.loads(file.read())[_type]
-        self.model_urls = ["C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\results2\\{}\\client{}\\train\\weights\\last.pt"
-                           .format(_type, i)
+        self.model_lvl = ["epoch0", "epoch32","epoch64","epoch96","last"]
+        self.model_urls = ["C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\results2\\{}\\client{}\\train\\weights\\{}.pt"
+                           .format(_type, i, self.model_lvl[i % len(self.model_lvl)])
                            for i in range(self.client_num)]
         # 标记client是否被选中
         self.tag = [0 for i in range(self.client_num)]
@@ -45,7 +46,7 @@ class Environment:
         self.latency = 0
         self.model = None
         self.step = 0
-        self.last_reward = -1
+        self.last_reward = -100
         # opt不涉及到模型，所以可以隨便弄
         self.opt = train_class.Opt(
             weights='C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\results2\\{}\\client0\\train\\weights\\best.pt',
@@ -65,11 +66,11 @@ class Environment:
         self.latency = 0
         self.now_loss = 1
         self.tag = [0 for i in range(self.client_num)]
-        self.last_reward = -1
+        self.last_reward = -100
 
 
     def get_state(self):
-        states = [self.now_loss, self.latency, ]
+        states = [self.now_loss, self.latency, self.lamda]
         # 添加當前模型的向量值
         if self.model is None:
             states.extend([0 for i in range(16)])
@@ -87,6 +88,7 @@ class Environment:
             else:
                 states.extend(self.codes[i])
         return  states
+    # （25+1） * 16 + loss + latency
 
     def get_loss(self):
         self.now_loss = self.helper.model_val(self.model)[0][4]
@@ -122,27 +124,28 @@ class Environment:
         return self.get_state(), self.last_reward, 1, False
 
 # 生成环境模型在特征向量
-# if __name__ == '__main__':
-#     from train_class import getParamlistByModel
-#     import torch.nn as nn
-#     road_type = ["crossing", "high_way", "main_road", "total"]
-#     model_url = "C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\results2\\{}\\client{}\\train\\weights\\last.pt"
-#     device = torch.device("cuda:0")
-#     net = nn.DataParallel(autoencoder.AutoCoder1(device)).to(device)
-#     aa = torch.load("C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\auto_encoder\\model1.pt")
-#     net.load_state_dict(aa)
-#     encoder_code = {}
-#     for _t in road_type:
-#         tmps = []
-#         for i in range(25):
-#             url = model_url.format(_t, i)
-#             item = train_class.getParamlistByModel(url)
-#             item = np.resize(item, (1, 7031250))
-#             x = torch.from_numpy(np.array([item])).to(device, torch.float)
-#             x = net.forward(x)
-#             x = x.detach().cpu().numpy()
-#             x = np.resize(x, (16)).tolist()
-#             tmps.append(x)
-#         encoder_code.update({_t: tmps})
-#     with open("C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\auto_encoder\\codes", "w") as file:
-#         file.write(json.dumps(encoder_code))
+if __name__ == '__main__':
+    from train_class import getParamlistByModel
+    import torch.nn as nn
+    road_type = ["crossing", "high_way", "main_road", "total"]
+    model_lvl = ["epoch0", "epoch32","epoch64","epoch96","last"]
+    model_url = "C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\results2\\{}\\client{}\\train\\weights\\{}.pt"
+    device = torch.device("cuda:0")
+    net = nn.DataParallel(autoencoder.AutoCoder1(device)).to(device)
+    aa = torch.load("C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\auto_encoder\\model1.pt")
+    net.load_state_dict(aa)
+    encoder_code = {}
+    for _t in road_type:
+        tmps = []
+        for i in range(25):
+            url = model_url.format(_t, i, model_lvl[i % len(model_lvl)])
+            item = train_class.getParamlistByModel(url)
+            item = np.resize(item, (1, 7031250))
+            x = torch.from_numpy(np.array([item])).to(device, torch.float)
+            x = net.forward(x)
+            x = x.detach().cpu().numpy()
+            x = np.resize(x, (16)).tolist()
+            tmps.append(x)
+        encoder_code.update({_t: tmps})
+    with open("C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\auto_encoder\\codes2", "w") as file:
+        file.write(json.dumps(encoder_code))

@@ -97,6 +97,9 @@ class Qnet(torch.nn.Module):
         self.fc2 = torch.nn.Linear(hidden, int(hidden / 4)).to(device)
         self.ln2 = torch.nn.LayerNorm(int(hidden / 4)).to(device)
 
+        self.fc3 = torch.nn.Linear(int(hidden / 4), int(hidden / 4)).to(device)
+        self.ln3 = torch.nn.LayerNorm(int(hidden / 4)).to(device)
+
         self.advantage_hidden_layer = NoisyLinear(int(hidden / 4), int(hidden / 4)).to(device)
         self.advantage_layer = NoisyLinear(int(hidden / 4), action_dim).to(device)
 
@@ -110,6 +113,9 @@ class Qnet(torch.nn.Module):
 
         x = F.relu(self.fc2(x))
         x = self.ln2(x)
+
+        x = F.relu(self.fc3(x))
+        x = self.ln3(x)
 
         adv_hid = F.relu(self.advantage_hidden_layer(x))
         val_hid = F.relu(self.value_hidden_layer(x))
