@@ -166,32 +166,32 @@ class DqnModelHelper:
         pass
 
 
-# if __name__ == '__main__':
-#     helper = AutoCoderModelHelper()
-#     t = time.time()
-#     a = helper.getSquad(800)
-#     print(time.time() - t)
-#     result = []
-#     # 周期
-#     for i in range(100):
-#
-#         random.shuffle(a)
-#
-#         # target = torch.from_numpy(np.array(a[j * 16: (j + 1) * 16])).to(helper.device, torch.float)
-#         for j in range(int(800 / 8)):
-#             loss = 0
-#             helper.optimizer.zero_grad()
-#             b = torch.from_numpy(np.array(a[j * 8: (j + 1) * 8])).to(helper.device, torch.float)
-#             out = helper.net.forward(b)
-#             _loss = torch.mean(F.mse_loss(out, b))
-#             _loss.backward()
-#             helper.optimizer.step()
-#             loss += _loss.to(torch.device("cpu")).detach().numpy().reshape(-1).tolist()[0]
-#             loss /= 8
-#             result.append(loss)
-#             print(loss)
-#             torch.cuda.empty_cache()
-#             if j % 10 == 0:
-#                 torch.save(helper.net.state_dict(), "auto_encoder\\model1.pt")
-#                 with open("auto_encoder\\loss.txt", "w+") as f:
-#                     f.write(json.dumps(result))
+if __name__ == '__main__':
+    helper = AutoCoderModelHelper()
+    t = time.time()
+    a = helper.getSquad(800)
+    print(time.time() - t)
+    result = []
+    # 周期
+    for i in range(100):
+
+        random.shuffle(a)
+
+        # target = torch.from_numpy(np.array(a[j * 16: (j + 1) * 16])).to(helper.device, torch.float)
+        for j in range(int(800 / 8)):
+            loss = 0
+            helper.optimizer.zero_grad()
+            b = torch.from_numpy(np.array(a[j * 8: (j + 1) * 8])).to(helper.device, torch.float)
+            out = helper.net.forward(b)
+            _loss = torch.mean(F.mse_loss(out, b))
+            _loss.backward()
+            helper.optimizer.step()
+            loss += _loss.to(torch.device("cpu")).detach().numpy().reshape(-1).tolist()[0]
+            loss /= 8
+            result.append(loss)
+            print(loss)
+            torch.cuda.empty_cache()
+            if j % 10 == 0:
+                torch.save(helper.net.state_dict(), "auto_encoder\\model1.pt")
+                with open("auto_encoder\\loss.txt", "w+") as f:
+                    f.write(json.dumps(result))

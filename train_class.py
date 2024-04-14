@@ -1135,29 +1135,15 @@ def expandModel(model):
 
 if __name__ == '__main__':
     opt = Opt(
-        weights='C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\results\\crossing\\client3\\train\\weights\\best.pt',
+        weights='C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\yolov5n.pt',
         device='0',
-        data='C:\\Users\\lily\\PycharmProjects\\Finland_road_data\\yolo_data\\ymls\\crossing\\val.yaml', epochs=1,
+        data='C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\yml\\client3.yml', epochs=1,
+        imgsz=352,
         )
-    model1 = torch.load(
-        "C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\results2\\crossing\\client3\\train\\weights\\best.pt")[
-        'model'].to(torch.device("cuda"))
-    model2 = torch.load(
-        "C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\results2\\crossing\\client4\\train\\weights\\best.pt")[
-        'model'].to(torch.device("cuda"))
-    model3 = torch.load(
-        "C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\results2\\crossing\\client5\\train\\weights\\best.pt")[
-        'model'].to(torch.device("cuda"))
     helper = TrainingHelper(opt)
-    helper.model_val(model1)
-    helper.model_val(model2)
-    helper.model_val(model3)
-
-    model = sum_model(model1,model2,0)
-    helper.model_val(model)
-    model = sum_model(model,model3,1)
-    helper.model_val(model)
-
+    # helper.main()
+    print(helper.model_val(torch.load(
+            "C:\\Users\\lily\\PycharmProjects\\zhangruoyi\\yolov5\\runs\\train\\train28\\weights\\best.pt")['model'].to(torch.device("cuda"))))
 #     for i in range(100):
 #         t = time.time()
 #         helper.model_val(model)
